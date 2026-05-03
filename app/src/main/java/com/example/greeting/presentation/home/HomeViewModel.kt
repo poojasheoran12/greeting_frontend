@@ -15,7 +15,7 @@ class HomeViewModel @Inject constructor(
     private val repository: TemplateRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(HomeState())
+    private val _state = MutableStateFlow(HomeUiState())
     val state = _state.asStateFlow()
 
     init {
@@ -28,10 +28,22 @@ class HomeViewModel @Inject constructor(
             
             repository.getTemplates()
                 .onSuccess { templates ->
-                    _state.update { it.copy(templates = templates, isLoading = false) }
+                    // Group templates by category
+                    val grouped = templates.groupBy { it.category }
+                    _state.update { 
+                        it.copy(
+                            groupedTemplates = grouped, 
+                            isLoading = false 
+                        ) 
+                    }
                 }
                 .onFailure { exception ->
-                    _state.update { it.copy(isLoading = false, error = exception.message ?: "Unknown error") }
+                    _state.update { 
+                        it.copy(
+                            isLoading = false, 
+                            error = exception.message ?: "Unknown error" 
+                        ) 
+                    }
                 }
         }
     }

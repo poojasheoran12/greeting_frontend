@@ -41,8 +41,29 @@ class AuthViewModel @Inject constructor(
         signIn { authRepository.signInWithEmail(email, password) }
     }
 
+    fun onEmailSignUp(email: String, password: String) {
+        signIn { authRepository.signUpWithEmail(email, password) }
+    }
+
     fun onAnonymousSignIn() {
         signIn { authRepository.signInAnonymously() }
+    }
+
+    fun onForgotPassword(email: String) {
+        if (email.isBlank()) {
+            _uiState.update { it.copy(error = "Please enter your email first") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            authRepository.sendPasswordResetEmail(email).onSuccess {
+                _uiState.update { it.copy(isLoading = false) }
+                _eventFlow.emit(AuthEvent.ShowError("Reset link sent to $email"))
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _eventFlow.emit(AuthEvent.ShowError(e.message ?: "Failed to send reset link"))
+            }
+        }
     }
 
     private fun signIn(signInMethod: suspend () -> Result<UserProfile>) {
