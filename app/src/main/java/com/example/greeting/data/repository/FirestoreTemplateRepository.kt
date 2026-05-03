@@ -24,4 +24,18 @@ class FirestoreTemplateRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun getTemplateById(id: String): Result<Template?> {
+        return try {
+            val template = firestore.collection("templates")
+                .document(id)
+                .get()
+                .await()
+                .toObject(TemplateDto::class.java)
+                ?.toDomain()
+            Result.success(template)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
