@@ -19,5 +19,4 @@ data class HomeUiState(
 
 sealed class HomeUiEvent {
     data class NavigateToPreview(val templateId: String) : HomeUiEvent()
-    data class ShowPremiumDialog(val template: Template) : HomeUiEvent()
 }

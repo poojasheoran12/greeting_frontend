@@ -44,9 +44,9 @@ class FirestoreTemplateRepository @Inject constructor(
     override fun getTemplatesByCategoryPaged(category: String): Flow<PagingData<Template>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 3,
-                initialLoadSize = 3,
-                prefetchDistance = 1,
+                pageSize = 10,
+                initialLoadSize = 10,
+                prefetchDistance = 2,
                 enablePlaceholders = false
             ),
             remoteMediator = TemplateRemoteMediator(firestore, database, category),

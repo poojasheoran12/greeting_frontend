@@ -1,28 +1,27 @@
 package com.example.greeting.domain.model
 
-object Category {
-    const val HINDI_QUOTES = "hindi quotes"
-    const val ENGLISH_QUOTES = "english quotes"
-    const val BIRTHDAYS = "birthdays"
-    const val PATRIOTIC = "patrotic"
-    const val DAYS = "days"
-
-    val ALL = listOf(
-        HINDI_QUOTES,
-        ENGLISH_QUOTES,
-        BIRTHDAYS,
-        PATRIOTIC,
-        DAYS
+enum class Category(
+    val id: String,
+    val displayName: String
+) {
+    HINDI_QUOTES(
+        id = "hindi quotes",
+        displayName = "Hindi Quotes"
+    ),
+    ENGLISH_QUOTES(
+        id = "english quotes",
+        displayName = "English Quotes"
+    ),
+    BIRTHDAYS(
+        id = "birthdays",
+        displayName = "Birthdays"
+    ),
+    PATRIOTIC(
+        id = "patrotic",
+        displayName = "Patrotic"
+    ),
+    DAYS(
+        id = "days",
+        displayName = "Special Days"
     )
-
-    fun getTitle(category: String): String {
-        return when (category) {
-            HINDI_QUOTES -> "Hindi Quotes"
-            ENGLISH_QUOTES -> "English Quotes"
-            BIRTHDAYS -> "Birthdays"
-            PATRIOTIC -> "Patrotic"
-            DAYS -> "Days"
-            else -> category.split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
-        }
-    }
 }

@@ -1,6 +1,7 @@
 package com.example.greeting.data.repository
 
 import com.example.greeting.data.mapper.toDomain
+import com.example.greeting.data.mapper.toDto
 import com.example.greeting.domain.model.UserProfile
 import com.example.greeting.domain.repository.AuthRepository
 import com.google.firebase.auth.AuthCredential

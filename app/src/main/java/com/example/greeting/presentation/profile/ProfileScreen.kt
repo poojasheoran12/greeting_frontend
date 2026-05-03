@@ -24,7 +24,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.greeting.presentation.core.components.*
 import com.example.greeting.presentation.theme.Gray100
-import com.example.greeting.presentation.theme.Gray400
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,11 +95,23 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = state.userProfile?.name ?: "User",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { viewModel.setShowEditNameDialog(true) }
+            ) {
+                Text(
+                    text = state.userProfile?.name ?: "User",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit Name",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             
             Text(
                 text = state.userProfile?.email ?: "",
@@ -121,5 +132,30 @@ fun ProfileScreen(
                 Text("Logout")
             }
         }
+    }
+
+    if (state.showEditNameDialog) {
+        var nameText by remember { mutableStateOf(state.userProfile?.name ?: "") }
+        AlertDialog(
+            onDismissRequest = { viewModel.setShowEditNameDialog(false) },
+            title = { Text("Edit Name") },
+            text = {
+                PremiumTextField(
+                    value = nameText,
+                    onValueChange = { nameText = it },
+                    label = "Your Name"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.updateName(nameText) }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.setShowEditNameDialog(false) }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

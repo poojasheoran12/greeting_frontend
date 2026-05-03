@@ -31,14 +31,13 @@ class TemplateRemoteMediator(
         loadType: LoadType,
         state: PagingState<Int, TemplateEntity>
     ): MediatorResult {
-        Log.d(TAG, "Syncing category: $category | Type: $loadType")
         return try {
             val loadSize = when (loadType) {
-                LoadType.REFRESH -> 3 // Fetch first 3 on refresh (Home screen load)
+                LoadType.REFRESH -> 10 
                 else -> state.config.pageSize
             }
 
-            // Don't fetch more if we're not refreshing and have no more data
+
             if (loadType != LoadType.REFRESH && lastSnapshot == null) {
                 return MediatorResult.Success(endOfPaginationReached = true)
             }
@@ -74,17 +73,18 @@ class TemplateRemoteMediator(
 
             database.withTransaction {
                 if (loadType == LoadType.REFRESH) {
-                    Log.d(TAG, "Clearing Room cache for $category")
-                    // We only clear and replace the "First 3" or whatever we fetched
-                    // to keep the local DB fresh with the latest featured items
                     database.templateDao.deleteTemplatesByCategory(category)
                 }
                 
+                val currentCount = if (loadType == LoadType.APPEND) {
+                    database.templateDao.getCountByCategory(category)
+                } else 0
+                
                 val entities = templates.mapIndexed { index, template ->
-                    template.toEntity(order = index)
+                    template.toEntity(order = currentCount + index)
                 }
                 database.templateDao.insertTemplates(entities)
-                Log.d(TAG, "Saved ${entities.size} entities to Room for $category")
+                Log.d(TAG, "Saved ${entities.size} entities to Room for $category starting at $currentCount")
             }
 
             MediatorResult.Success(endOfPaginationReached = templates.isEmpty())

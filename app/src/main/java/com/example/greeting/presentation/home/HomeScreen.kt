@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.greeting.presentation.home.components.CategorySection
 import com.example.greeting.presentation.home.components.FeaturedHeroSection
+import com.example.greeting.presentation.home.components.HomeSectionItem
 import com.example.greeting.presentation.home.components.PremiumUpsellDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +37,6 @@ fun HomeScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is HomeUiEvent.NavigateToPreview -> onNavigateToPreview(event.templateId)
-                is HomeUiEvent.ShowPremiumDialog -> { }
             }
         }
     }
@@ -64,7 +64,7 @@ fun HomeScreen(
                 FeaturedHeroSection()
             }
 
-            items(uiState.sections) { section ->
+            items(uiState.sections, key = { it.title }) { section ->
                 HomeSectionItem(
                     section = section,
                     onTemplateClick = { viewModel.onTemplateClick(it) }
@@ -84,15 +84,3 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun HomeSectionItem(
-    section: com.example.greeting.presentation.home.HomeSection,
-    onTemplateClick: (com.example.greeting.domain.model.Template) -> Unit
-) {
-    val lazyPagingItems = section.templates.collectAsLazyPagingItems()
-    CategorySection(
-        title = section.title,
-        templates = lazyPagingItems,
-        onTemplateClick = onTemplateClick
-    )
-}

@@ -38,6 +38,30 @@ class AuthViewModel @Inject constructor(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
+    fun onEmailChange(email: String) {
+        _uiState.update { it.copy(email = email) }
+    }
+
+    fun onPasswordChange(password: String) {
+        _uiState.update { it.copy(password = password) }
+    }
+
+    fun onConfirmPasswordChange(confirmPassword: String) {
+        _uiState.update { it.copy(confirmPassword = confirmPassword) }
+    }
+
+    fun toggleFormType() {
+        _uiState.update { it.copy(isLoginForm = !it.isLoginForm) }
+    }
+
+    fun togglePasswordVisibility() {
+        _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
+    }
+
+    fun toggleConfirmPasswordVisibility() {
+        _uiState.update { it.copy(confirmPasswordVisible = !it.confirmPasswordVisible) }
+    }
+
     private fun validateCredentials(email: String, password: String? = null): String? {
         if (!isValidEmail(email)) return "Invalid email format"
         if (password != null && password.length < 6) return "Password must be at least 6 characters"
@@ -94,8 +118,8 @@ class AuthViewModel @Inject constructor(
             signInMethod().onSuccess { user ->
                 checkUserProfile(user.uid)
             }.onFailure { e ->
-                // Login failed - this is a persistent screen error
                 _uiState.update { it.copy(isLoading = false, error = e.message ?: "Login failed") }
+                _eventFlow.emit(AuthEvent.ShowError(e.message ?: "Authentication failed"))
             }
         }
     }

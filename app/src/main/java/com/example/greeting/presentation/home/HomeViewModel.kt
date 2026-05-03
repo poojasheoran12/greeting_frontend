@@ -32,10 +32,10 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun initializeSections() {
-        val sections = Category.ALL.map { category ->
+        val sections = Category.values().map { category ->
             HomeSection(
-                title = Category.getTitle(category),
-                templates = repository.getTemplatesByCategoryPaged(category)
+                title = category.displayName,
+                templates = repository.getTemplatesByCategoryPaged(category.id)
                     .cachedIn(viewModelScope)
             )
         }
@@ -46,7 +46,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             if (template.isPremium) {
                 _state.update { it.copy(selectedPremiumTemplate = template, showPremiumDialog = true) }
-                _events.emit(HomeUiEvent.ShowPremiumDialog(template))
             } else {
                 _events.emit(HomeUiEvent.NavigateToPreview(template.id))
             }

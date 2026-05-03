@@ -37,7 +37,13 @@ class ProfileSetupViewModel @Inject constructor(
     }
 
     fun onSaveProfile() {
-        val currentUser = authRepository.getCurrentUser() ?: return
+        val currentUser = authRepository.getCurrentUser()
+        if (currentUser == null) {
+            viewModelScope.launch {
+                _eventFlow.emit(UiEvent.ShowError("User session not found"))
+            }
+            return
+        }
         
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }

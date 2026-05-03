@@ -39,12 +39,6 @@ fun LoginScreen(
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var isLoginForm by remember { mutableStateOf(true) }
-    var passwordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -79,13 +73,13 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = if (isLoginForm) "Welcome Back" else "Create Account",
+                text = if (state.isLoginForm) "Welcome Back" else "Create Account",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold
             )
             
             Text(
-                text = if (isLoginForm) "Sign in to continue" else "Sign up to start creating",
+                text = if (state.isLoginForm) "Sign in to continue" else "Sign up to start creating",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -93,8 +87,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(48.dp))
 
             PremiumTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = state.email,
+                onValueChange = { viewModel.onEmailChange(it) },
                 label = "Email Address",
                 leadingIcon = Icons.Default.Email
             )
@@ -102,50 +96,67 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             PremiumTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = state.password,
+                onValueChange = { viewModel.onPasswordChange(it) },
                 label = "Password",
                 leadingIcon = Icons.Default.Lock,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (state.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Icon(
-                            if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            if (state.passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = null
                         )
                     }
                 }
             )
 
-            if (isLoginForm) {
+            if (state.isLoginForm) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    TextButton(onClick = { viewModel.onForgotPassword(email) }) {
+                    TextButton(onClick = { viewModel.onForgotPassword(state.email) }) {
                         Text("Forgot Password?", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
 
-            if (!isLoginForm) {
+            if (!state.isLoginForm) {
                 Spacer(modifier = Modifier.height(16.dp))
                 PremiumTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    value = state.confirmPassword,
+                    onValueChange = { viewModel.onConfirmPasswordChange(it) },
                     label = "Confirm Password",
                     leadingIcon = Icons.Default.Lock,
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = if (state.confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { viewModel.toggleConfirmPasswordVisibility() }) {
+                            Icon(
+                                if (state.confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                )
+            }
+
+            state.error?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             PremiumButton(
-                text = if (isLoginForm) "Sign In" else "Sign Up",
+                text = if (state.isLoginForm) "Sign In" else "Sign Up",
                 onClick = { 
-                    if (isLoginForm) {
-                        viewModel.onEmailSignIn(email, password)
+                    if (state.isLoginForm) {
+                        viewModel.onEmailSignIn(state.email, state.password)
                     } else {
-                        if (password == confirmPassword) {
-                            viewModel.onEmailSignUp(email, password)
+                        if (state.password == state.confirmPassword) {
+                            viewModel.onEmailSignUp(state.email, state.password)
                         } else {
                             Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                         }
@@ -178,9 +189,9 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { isLoginForm = !isLoginForm }) {
+            TextButton(onClick = { viewModel.toggleFormType() }) {
                 Text(
-                    text = if (isLoginForm) "Don't have an account? Sign Up" else "Already have an account? Sign In",
+                    text = if (state.isLoginForm) "Don't have an account? Sign Up" else "Already have an account? Sign In",
                     color = MaterialTheme.colorScheme.primary
                 )
             }
