@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -82,7 +84,8 @@ fun PreviewScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .background(Color(0xFFF5F5F5)),
             contentAlignment = Alignment.Center
         ) {
             val template = uiState.template
@@ -93,9 +96,10 @@ fun PreviewScreen(
                     template = template,
                     userProfile = userProfile,
                     modifier = Modifier
-                        .fillMaxHeight(0.9f)
+                        .fillMaxHeight(0.85f)
                         .aspectRatio(9f / 16f)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        .shadow(12.dp, RoundedCornerShape(8.dp))
+                        .background(Color.White)
                 )
             } else if (uiState.error != null) {
                 Text(text = uiState.error!!, color = MaterialTheme.colorScheme.error)
@@ -112,42 +116,54 @@ fun GreetingPreview(
     userProfile: UserProfile,
     modifier: Modifier = Modifier
 ) {
-    val refWidth = 1080f
-    val refHeight = 1920f
-
     BoxWithConstraints(modifier = modifier) {
         val containerWidth = maxWidth
         val containerHeight = maxHeight
 
-        // 1. Background Template
-        AsyncImage(
-            model = template.imageUrl,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
 
-        // 2. User Profile Image Overlay (with Green Border as per request)
-        val rawSize = if (template.photoSlot.size <= 0f) 220f else template.photoSlot.size
-        val profileSize = containerWidth * (rawSize / refWidth)
-        val profileX = containerWidth * (template.photoSlot.x / refWidth)
-        val profileY = containerHeight * (template.photoSlot.y / refHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(containerHeight * 0.12f)
+                    .background(Color(0xFF1A1A1A)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = userProfile.name,
+                    color = Color.White,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
+            }
 
+
+            AsyncImage(
+                model = template.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+
+        val profileSize = containerWidth * 0.25f
+        
         Box(
             modifier = Modifier
+                .padding(start = 16.dp, top = (containerHeight * 0.12f) - (profileSize / 2))
                 .size(profileSize)
-                .offset(x = profileX, y = profileY)
-                .graphicsLayer {
-                    translationX = -size.width / 2f
-                    translationY = -size.height / 2f
-                }
                 .border(
-                    width = (profileSize.value * 0.05f).dp, // Dynamic border thickness
-                    color = Color(0xFF4CAF50), // Green border as seen in the image
+                    width = (profileSize.value * 0.08f).dp,
+                    color = Color(0xFF4CAF50),
                     shape = CircleShape
                 )
-                .padding((profileSize.value * 0.02f).dp) // Subtle gap
-                .clip(CircleShape),
+                .padding((profileSize.value * 0.03f).dp)
+                .clip(CircleShape)
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -159,24 +175,5 @@ fun GreetingPreview(
                 error = rememberVectorPainter(Icons.Default.Person)
             )
         }
-
-        // 3. User Name Overlay
-        val textX = containerWidth * (template.textSlot.x / refWidth)
-        val textY = containerHeight * (template.textSlot.y / refHeight)
-        
-        Text(
-            text = userProfile.name,
-            modifier = Modifier
-                .offset(x = textX, y = textY)
-                .graphicsLayer {
-                    translationX = -size.width / 2f
-                    translationY = -size.height / 2f
-                },
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            letterSpacing = 1.sp
-        )
     }
 }

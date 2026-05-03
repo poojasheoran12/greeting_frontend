@@ -89,7 +89,7 @@ class AuthViewModel @Inject constructor(
             }
         }.onFailure { e ->
             _uiState.update { it.copy(isLoading = false, error = e.message) }
-            _eventFlow.emit(AuthEvent.NavigateToProfileSetup) // Default to setup if check fails
+            _eventFlow.emit(AuthEvent.NavigateToProfileSetup)
         }
     }
 

@@ -22,7 +22,7 @@ fun SplashScreen(
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        delay(2000) // Simulate splash delay
+        delay(2000)
         if (state.user != null) {
             onNavigateToHome()
         } else {

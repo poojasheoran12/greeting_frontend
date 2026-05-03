@@ -58,8 +58,8 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Home.route) {
-            HomeScreen(onTemplateClick = { template ->
-                navController.navigate(Screen.Preview.route + "/${template.id}")
+            HomeScreen(onNavigateToPreview = { templateId ->
+                navController.navigate(Screen.Preview.route + "/$templateId")
             })
         }
 

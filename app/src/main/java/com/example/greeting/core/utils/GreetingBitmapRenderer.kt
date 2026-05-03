@@ -19,62 +19,66 @@ class GreetingBitmapRenderer @Inject constructor(
 ) {
     private val imageLoader = ImageLoader(context)
 
-    private val REF_WIDTH = 1080f
-    private val REF_HEIGHT = 1920f
-
     suspend fun render(template: Template, userProfile: UserProfile): Bitmap = withContext(Dispatchers.IO) {
         val width = 1080
         val height = 1920
+        val headerHeight = (height * 0.12).toInt()
+        
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. Draw Background
+
+        val headerPaint = Paint().apply {
+            color = Color.parseColor("#1A1A1A")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), headerHeight.toFloat(), headerPaint)
+
+
+        val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = 72f
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            letterSpacing = 0.05f
+        }
+        val nameX = width / 2f
+        val nameY = (headerHeight / 2f) - ((namePaint.descent() + namePaint.ascent()) / 2f)
+        canvas.drawText(userProfile.name, nameX, nameY, namePaint)
+
+
         val bgBitmap = fetchBitmap(template.imageUrl)
         if (bgBitmap != null) {
-            canvas.drawBitmap(bgBitmap, null, Rect(0, 0, width, height), Paint(Paint.FILTER_BITMAP_FLAG))
+            val destRect = Rect(0, headerHeight, width, height)
+            canvas.drawBitmap(bgBitmap, null, destRect, Paint(Paint.FILTER_BITMAP_FLAG))
         }
 
-        // 2. Draw Profile Image with Green Border
+
         userProfile.photoUrl?.let { url ->
             val profileBitmap = fetchBitmap(url)
             if (profileBitmap != null) {
-                val rawSize = if (template.photoSlot.size <= 0f) 220f else template.photoSlot.size
-                val size = (rawSize / REF_WIDTH) * width
-                val x = (template.photoSlot.x / REF_WIDTH) * width
-                val y = (template.photoSlot.y / REF_HEIGHT) * height
-
+                val size = (width * 0.25).toInt()
+                val left = 48
+                val top = headerHeight - (size / 2)
+                
                 val circularBitmap = getCircularBitmap(profileBitmap)
                 
-                // Draw Green Border
+
                 val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = Color.parseColor("#4CAF50")
                     style = Paint.Style.STROKE
-                    strokeWidth = size * 0.05f
+                    strokeWidth = size * 0.08f
                 }
-                canvas.drawCircle(x, y, size / 2f, borderPaint)
+                canvas.drawCircle((left + size/2).toFloat(), (top + size/2).toFloat(), (size/2).toFloat(), borderPaint)
 
-                // Draw Image
-                val destRect = RectF(x - size/2, y - size/2, x + size/2, y + size/2)
-                canvas.drawBitmap(circularBitmap, null, destRect, Paint(Paint.FILTER_BITMAP_FLAG))
+
+                val imageSize = (size * 0.94).toInt()
+                val imageLeft = left + (size - imageSize)/2
+                val imageTop = top + (size - imageSize)/2
+                val destRectF = RectF(imageLeft.toFloat(), imageTop.toFloat(), (imageLeft + imageSize).toFloat(), (imageTop + imageSize).toFloat())
+                canvas.drawBitmap(circularBitmap, null, destRectF, Paint(Paint.FILTER_BITMAP_FLAG))
             }
         }
-
-        // 3. Draw Name
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 64f
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            letterSpacing = 0.05f
-        }
-        
-        val textX = (template.textSlot.x / REF_WIDTH) * width
-        val textY = (template.textSlot.y / REF_HEIGHT) * height
-        
-        val fontMetrics = textPaint.fontMetrics
-        val verticalCenterOffset = (fontMetrics.ascent + fontMetrics.descent) / 2
-        
-        canvas.drawText(userProfile.name, textX, textY - verticalCenterOffset, textPaint)
 
         bitmap
     }

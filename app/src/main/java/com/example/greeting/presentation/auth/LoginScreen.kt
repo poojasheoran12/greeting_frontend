@@ -11,6 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import com.example.greeting.R
 import com.example.greeting.presentation.auth.AuthViewModel.AuthEvent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -83,7 +86,7 @@ fun LoginScreen(
         if (state.isLoading) {
             CircularProgressIndicator()
         } else {
-            // Email/Password Fields
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -106,18 +109,14 @@ fun LoginScreen(
                     androidx.compose.ui.text.input.PasswordVisualTransformation()
                 },
                 trailingIcon = {
-                    val image = if (passwordVisible) {
-                        androidx.compose.material.icons.Icons.Filled.Visibility
-                    } else {
-                        androidx.compose.material.icons.Icons.Filled.VisibilityOff
-                    }
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(imageVector = image, contentDescription = "Toggle password visibility")
                     }
                 }
             )
 
-            // Forgot Password Link
+
             if (!isSignUp) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                     TextButton(onClick = { viewModel.onForgotPassword(email) }) {
@@ -150,7 +149,7 @@ fun LoginScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Social Sign-In
+
             OutlinedButton(
                 onClick = { launcher.launch(googleSignInClient.signInIntent) },
                 modifier = Modifier.fillMaxWidth(),

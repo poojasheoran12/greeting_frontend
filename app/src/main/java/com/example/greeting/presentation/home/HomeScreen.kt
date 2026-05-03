@@ -1,5 +1,6 @@
 package com.example.greeting.presentation.home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,14 +9,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,17 +31,30 @@ import com.example.greeting.domain.model.Template
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onTemplateClick: (Template) -> Unit
+    onNavigateToPreview: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var showUpsellDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is HomeUiEvent.NavigateToPreview -> {
+                    onNavigateToPreview(event.templateId)
+                }
+                is HomeUiEvent.ShowPremiumDialog -> {
+                    // Handled by state below, but could trigger extra logic here
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        "Greetings", 
+                        "Greeting Designs", 
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold
                     ) 
@@ -59,21 +76,15 @@ fun HomeScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                verticalArrangement = Arrangement.spacedBy(28.dp),
+                contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 state.groupedTemplates.forEach { (category, templates) ->
                     item {
                         CategorySection(
                             title = category,
                             templates = templates,
-                            onTemplateClick = { template ->
-                                if (template.isPremium) {
-                                    showUpsellDialog = true
-                                } else {
-                                    onTemplateClick(template)
-                                }
-                            }
+                            onTemplateClick = { viewModel.onTemplateClick(it) }
                         )
                     }
                 }
@@ -89,8 +100,14 @@ fun HomeScreen(
         }
     }
 
-    if (showUpsellDialog) {
-        PremiumUpsellDialog(onDismiss = { showUpsellDialog = false })
+    if (state.showPremiumDialog) {
+        PremiumUpsellDialog(
+            onDismiss = { viewModel.dismissPremiumDialog() },
+            onSubscribe = {
+                Toast.makeText(context, "Subscription feature coming soon", Toast.LENGTH_SHORT).show()
+                viewModel.dismissPremiumDialog()
+            }
+        )
     }
 }
 
@@ -104,13 +121,13 @@ fun CategorySection(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
         )
         
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
+            contentPadding = PaddingValues(horizontal = 20.dp)
         ) {
             items(templates) { template ->
                 TemplateCard(
@@ -130,10 +147,10 @@ fun TemplateCard(
     Card(
         modifier = Modifier
             .width(160.dp)
-            .height(240.dp)
+            .aspectRatio(0.7f)
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -143,48 +160,108 @@ fun TemplateCard(
                 contentScale = ContentScale.Crop
             )
             
-            // Premium Badge
-            if (template.isPremium) {
-                Box(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopEnd)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+
+            val badgeColor = if (template.isPremium) Color(0xFFFFD700) else Color(0xFFEEEEEE)
+            val badgeText = if (template.isPremium) "PRO" else "FREE"
+            val badgeTextColor = if (template.isPremium) Color.Black else Color.DarkGray
+            
+            Surface(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .align(Alignment.TopEnd),
+                color = badgeColor.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    if (template.isPremium) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = Color.Black
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = badgeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = badgeTextColor
                     )
                 }
             }
 
-            // Subtle gradient or bottom overlay can be added here
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.3f))
+                        )
+                    )
+            )
         }
     }
 }
 
 @Composable
-fun PremiumUpsellDialog(onDismiss: () -> Unit) {
+fun PremiumUpsellDialog(
+    onDismiss: () -> Unit,
+    onSubscribe: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Unlock Premium") },
-        text = { Text("This template is part of our Premium collection. Subscribe now to access all designs and remove ads.") },
+        title = { 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Unlock Premium", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = { 
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Get instant access to this and hundreds of other exclusive designs.")
+                
+                BenefitItem("Unlimited premium templates")
+                BenefitItem("High-resolution exports")
+                BenefitItem("Exclusive seasonal greetings")
+                BenefitItem("Remove all advertisements")
+            }
+        },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Get Premium")
+            Button(
+                onClick = onSubscribe,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Subscribe Now", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Later")
+                Text("Maybe Later")
             }
         },
-        icon = {
-            Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700))
-        }
+        shape = RoundedCornerShape(24.dp)
     )
+}
+
+@Composable
+fun BenefitItem(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            Icons.Default.CheckCircle, 
+            contentDescription = null, 
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
 }
