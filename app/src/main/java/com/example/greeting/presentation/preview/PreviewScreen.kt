@@ -15,9 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +27,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.model.UserProfile
+import com.example.greeting.presentation.core.components.PremiumButton
+import com.example.greeting.presentation.theme.Gray100
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,12 +42,8 @@ fun PreviewScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is PreviewEvent.Error -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                }
-                PreviewEvent.ShareComplete -> {
-                    Toast.makeText(context, "Greeting Shared!", Toast.LENGTH_SHORT).show()
-                }
+                is PreviewEvent.Error -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                PreviewEvent.ShareComplete -> Toast.makeText(context, "Greeting Shared!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -60,120 +56,94 @@ fun PreviewScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    if (uiState.isSharing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        IconButton(
-                            onClick = { viewModel.onShareClick() },
-                            enabled = uiState.template != null && uiState.userProfile != null
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = "Share")
-                        }
-                    }
                 }
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF5F5F5)),
-            contentAlignment = Alignment.Center
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val template = uiState.template
             val userProfile = uiState.userProfile
 
             if (template != null && userProfile != null) {
-                GreetingPreview(
-                    template = template,
-                    userProfile = userProfile,
-                    modifier = Modifier
-                        .fillMaxHeight(0.85f)
-                        .aspectRatio(9f / 16f)
-                        .shadow(12.dp, RoundedCornerShape(8.dp))
-                        .background(Color.White)
+                Card(
+                    modifier = Modifier.weight(1f).aspectRatio(9f / 16f),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    GreetingPreviewContent(template = template, userProfile = userProfile)
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                PremiumButton(
+                    text = "Share with Friends",
+                    onClick = { viewModel.onShareClick() },
+                    isLoading = uiState.isSharing,
+                    icon = Icons.Default.Share
                 )
-            } else if (uiState.error != null) {
-                Text(text = uiState.error!!, color = MaterialTheme.colorScheme.error)
             } else {
-                CircularProgressIndicator()
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }
 }
 
 @Composable
-fun GreetingPreview(
+fun GreetingPreviewContent(
     template: Template,
-    userProfile: UserProfile,
-    modifier: Modifier = Modifier
+    userProfile: UserProfile
 ) {
-    BoxWithConstraints(modifier = modifier) {
-        val containerWidth = maxWidth
-        val containerHeight = maxHeight
-
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(containerHeight * 0.12f)
-                    .background(Color(0xFF1A1A1A)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = userProfile.name,
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
-            }
-
-
-            AsyncImage(
-                model = template.imageUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentScale = ContentScale.Crop
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp) 
+                .background(Color(0xFF1A1A1A)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = userProfile.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+                fontSize = 24.sp
             )
         }
 
-
-        val profileSize = containerWidth * 0.25f
-        
-        Box(
-            modifier = Modifier
-                .padding(start = 16.dp, top = (containerHeight * 0.12f) - (profileSize / 2))
-                .size(profileSize)
-                .border(
-                    width = (profileSize.value * 0.08f).dp,
-                    color = Color(0xFF4CAF50),
-                    shape = CircleShape
-                )
-                .padding((profileSize.value * 0.03f).dp)
-                .clip(CircleShape)
-                .background(Color.White),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.weight(1f)) {
             AsyncImage(
-                model = userProfile.photoUrl,
+                model = template.imageUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                placeholder = rememberVectorPainter(Icons.Default.Person),
-                error = rememberVectorPainter(Icons.Default.Person)
+                contentScale = ContentScale.Crop
             )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = 16.dp, y = (-50).dp)
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(4.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = userProfile.photoUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = rememberVectorPainter(Icons.Default.Person)
+                )
+            }
         }
     }
 }

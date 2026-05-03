@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
     private val bitmapRenderer: GreetingBitmapRenderer,
@@ -45,30 +46,32 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             val authUser = authRepository.getCurrentUser()
             if (authUser == null) {
-                _events.emit(PreviewEvent.Error("User not logged in"))
+                _uiState.update { it.copy(error = "User not logged in") }
                 return@launch
             }
 
             if (templateId == null) {
-                _events.emit(PreviewEvent.Error("Template ID missing"))
+                _uiState.update { it.copy(error = "Template ID missing") }
                 return@launch
             }
 
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
             // Fetch latest profile from Firestore
             userRepository.getUserProfile(authUser.uid).onSuccess { profile ->
-                val user = profile ?: authUser // Fallback to auth info if firestore is empty
+                val user = profile ?: authUser
                 
                 templateRepository.getTemplateById(templateId).onSuccess { template ->
                     if (template != null) {
-                        _uiState.update { it.copy(template = template, userProfile = user) }
+                        _uiState.update { it.copy(template = template, userProfile = user, isLoading = false) }
                     } else {
-                        _events.emit(PreviewEvent.Error("Template not found"))
+                        _uiState.update { it.copy(error = "Template not found", isLoading = false) }
                     }
                 }.onFailure { error ->
-                    _events.emit(PreviewEvent.Error(error.message ?: "Failed to fetch template"))
+                    _uiState.update { it.copy(error = error.message ?: "Failed to fetch template", isLoading = false) }
                 }
             }.onFailure { error ->
-                _events.emit(PreviewEvent.Error("Failed to fetch profile: ${error.message}"))
+                _uiState.update { it.copy(error = "Failed to fetch profile: ${error.message}", isLoading = false) }
             }
         }
     }
@@ -80,15 +83,18 @@ class PreviewViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSharing = true) }
-            try {
-                val bitmap = bitmapRenderer.render(template, userProfile)
-                shareManager.shareImage(bitmap)
-                _events.emit(PreviewEvent.ShareComplete)
-            } catch (e: Exception) {
-                _events.emit(PreviewEvent.Error(e.message ?: "Failed to share"))
-            } finally {
-                _uiState.update { it.copy(isSharing = false) }
-            }
+            
+            val bitmap = bitmapRenderer.render(template, userProfile)
+            shareManager.shareImage(bitmap)
+                .onSuccess {
+                    _events.emit(PreviewEvent.ShareComplete)
+                }
+                .onFailure { e ->
+                    // Action error (Sharing) is transient - use Event (Toast)
+                    _events.emit(PreviewEvent.Error(e.message ?: "Failed to share"))
+                }
+            
+            _uiState.update { it.copy(isSharing = false) }
         }
     }
 }

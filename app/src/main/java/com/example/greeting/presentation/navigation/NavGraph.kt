@@ -10,7 +10,7 @@ import com.example.greeting.presentation.auth.SplashScreen
 import com.example.greeting.presentation.home.HomeScreen
 import com.example.greeting.presentation.preview.PreviewScreen
 import com.example.greeting.presentation.profile.ProfileScreen
-import com.example.greeting.presentation.profile.ProfileSetupScreen
+import com.example.greeting.presentation.profileSetup.ProfileSetupScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -50,7 +50,7 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.ProfileSetup.route) {
             ProfileSetupScreen(
-                onNavigateToHome = {
+                onComplete = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.ProfileSetup.route) { inclusive = true }
                     }

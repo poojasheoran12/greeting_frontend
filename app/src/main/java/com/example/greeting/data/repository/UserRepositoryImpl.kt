@@ -48,26 +48,25 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveUserProfile(user: UserProfile, imageUri: Uri?): Result<Unit> {
+    override suspend fun uploadProfileImage(uid: String, uri: Uri): Result<String> {
         return try {
-            var updatedUser = user
+            val ref = storage.reference.child("users/$uid/profile.jpg")
+            ref.putFile(uri).await()
+            val url = ref.downloadUrl.await().toString()
+            Result.success(url)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
-            // 1. Upload Image if present
-            if (imageUri != null) {
-                val ref = storage.reference.child("profiles/${user.uid}.jpg")
-                ref.putFile(imageUri).await()
-                val url = ref.downloadUrl.await().toString()
-                updatedUser = user.copy(photoUrl = url)
-            }
-
-            // 2. Save to Firestore
+    override suspend fun saveUserProfile(user: UserProfile): Result<Unit> {
+        return try {
             firestore.collection("users")
                 .document(user.uid)
-                .set(updatedUser.toDto())
+                .set(user.toDto())
                 .await()
 
-            // 3. Save to Room (SSOT)
-            userDao.insertUser(updatedUser.toEntity())
+            userDao.insertUser(user.toEntity())
 
             Result.success(Unit)
         } catch (e: Exception) {

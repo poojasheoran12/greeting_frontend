@@ -85,6 +85,7 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.room.paging)
     add("kapt", libs.room.compiler)
 
     // Hilt

@@ -5,7 +5,6 @@ import com.example.greeting.domain.model.Template
 import kotlinx.coroutines.flow.Flow
 
 interface TemplateRepository {
-    suspend fun getTemplates(): Result<List<Template>>
     suspend fun getTemplateById(id: String): Result<Template?>
     fun getTemplatesByCategoryPaged(category: String): Flow<PagingData<Template>>
 }

@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
 import com.example.greeting.presentation.navigation.NavGraph
-import com.example.greeting.ui.theme.GreetingTheme
+import com.example.greeting.presentation.theme.GreetingTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

@@ -16,31 +16,41 @@ import javax.inject.Singleton
 class ImageShareManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    suspend fun shareImage(bitmap: Bitmap): Unit = withContext(Dispatchers.IO) {
-        val imagesFolder = File(context.cacheDir, "images")
-        imagesFolder.mkdirs()
-        val file = File(imagesFolder, "greeting_share.png")
-        
-        val stream = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-        stream.flush()
-        stream.close()
+    suspend fun shareImage(bitmap: Bitmap): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val imagesFolder = File(context.cacheDir, "images")
+            if (!imagesFolder.exists()) {
+                imagesFolder.mkdirs()
+            } else {
+                imagesFolder.listFiles()?.forEach { it.delete() }
+            }
+            
+            val file = File(imagesFolder, "greeting_${System.currentTimeMillis()}.png")
+            
+            FileOutputStream(file).use { stream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                stream.flush()
+            }
 
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/png"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            val shareIntent = Intent.createChooser(intent, "Share Greeting").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(shareIntent)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-
-        val shareIntent = Intent.createChooser(intent, "Share Greeting").apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(shareIntent)
     }
 }

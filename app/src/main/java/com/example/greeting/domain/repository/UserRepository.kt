@@ -5,5 +5,6 @@ import com.example.greeting.domain.model.UserProfile
 
 interface UserRepository {
     suspend fun getUserProfile(uid: String): Result<UserProfile?>
-    suspend fun saveUserProfile(user: UserProfile, imageUri: Uri?): Result<Unit>
+    suspend fun uploadProfileImage(uid: String, uri: Uri): Result<String>
+    suspend fun saveUserProfile(user: UserProfile): Result<Unit>
 }

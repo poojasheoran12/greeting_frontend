@@ -20,62 +20,47 @@ class GreetingBitmapRenderer @Inject constructor(
     private val imageLoader = ImageLoader(context)
 
     suspend fun render(template: Template, userProfile: UserProfile): Bitmap = withContext(Dispatchers.IO) {
-        val width = 1080
-        val height = 1920
-        val headerHeight = (height * 0.12).toInt()
+        val templateWidth = 1080
+        val templateHeight = 1920
+        val headerHeight = 240 
         
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val totalWidth = templateWidth
+        val totalHeight = templateHeight + headerHeight
+        
+        val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-
-        val headerPaint = Paint().apply {
-            color = Color.parseColor("#1A1A1A")
-            style = Paint.Style.FILL
-        }
-        canvas.drawRect(0f, 0f, width.toFloat(), headerHeight.toFloat(), headerPaint)
-
+        val barPaint = Paint().apply { color = Color.parseColor("#1A1A1A") }
+        canvas.drawRect(0f, 0f, totalWidth.toFloat(), headerHeight.toFloat(), barPaint)
 
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 72f
+            textSize = 90f
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            letterSpacing = 0.05f
         }
-        val nameX = width / 2f
-        val nameY = (headerHeight / 2f) - ((namePaint.descent() + namePaint.ascent()) / 2f)
-        canvas.drawText(userProfile.name, nameX, nameY, namePaint)
-
+        canvas.drawText(userProfile.name, totalWidth / 2f, headerHeight / 2f + 30f, namePaint)
 
         val bgBitmap = fetchBitmap(template.imageUrl)
         if (bgBitmap != null) {
-            val destRect = Rect(0, headerHeight, width, height)
+            val destRect = Rect(0, headerHeight, totalWidth, totalHeight)
             canvas.drawBitmap(bgBitmap, null, destRect, Paint(Paint.FILTER_BITMAP_FLAG))
         }
-
 
         userProfile.photoUrl?.let { url ->
             val profileBitmap = fetchBitmap(url)
             if (profileBitmap != null) {
-                val size = (width * 0.25).toInt()
-                val left = 48
-                val top = headerHeight - (size / 2)
+                val size = 340f 
+                val margin = 60f
+                val centerX = margin + size / 2
+                val centerY = headerHeight.toFloat()
                 
                 val circularBitmap = getCircularBitmap(profileBitmap)
                 
-
-                val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#4CAF50")
-                    style = Paint.Style.STROKE
-                    strokeWidth = size * 0.08f
-                }
-                canvas.drawCircle((left + size/2).toFloat(), (top + size/2).toFloat(), (size/2).toFloat(), borderPaint)
-
-
-                val imageSize = (size * 0.94).toInt()
-                val imageLeft = left + (size - imageSize)/2
-                val imageTop = top + (size - imageSize)/2
-                val destRectF = RectF(imageLeft.toFloat(), imageTop.toFloat(), (imageLeft + imageSize).toFloat(), (imageTop + imageSize).toFloat())
+                val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+                canvas.drawCircle(centerX, centerY, size / 2 + 15, whitePaint)
+                
+                val destRectF = RectF(centerX - size/2, centerY - size/2, centerX + size/2, centerY + size/2)
                 canvas.drawBitmap(circularBitmap, null, destRectF, Paint(Paint.FILTER_BITMAP_FLAG))
             }
         }

@@ -1,4 +1,4 @@
-package com.example.greeting.presentation.profile
+package com.example.greeting.presentation.profileSetup
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -42,13 +42,28 @@ class ProfileSetupViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
+            var photoUrl: String? = null
+            
+            // Step 1: Upload Image if selected
+            _uiState.value.selectedImageUri?.let { uri ->
+                userRepository.uploadProfileImage(currentUser.uid, uri).onSuccess { url ->
+                    photoUrl = url
+                }.onFailure { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message) }
+                    _eventFlow.emit(UiEvent.ShowError(e.message ?: "Failed to upload image"))
+                    return@launch
+                }
+            }
+
+            // Step 2: Save Profile
             val userProfile = UserProfile(
                 uid = currentUser.uid,
                 name = _uiState.value.name,
+                photoUrl = photoUrl,
                 isGuest = currentUser.isGuest
             )
             
-            userRepository.saveUserProfile(userProfile, _uiState.value.selectedImageUri)
+            userRepository.saveUserProfile(userProfile)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false, isSaved = true) }
                     _eventFlow.emit(UiEvent.NavigateToHome)

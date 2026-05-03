@@ -27,10 +27,21 @@ class AuthViewModel @Inject constructor(
         object NavigateToHome : AuthEvent()
         object NavigateToProfileSetup : AuthEvent()
         data class ShowError(val message: String) : AuthEvent()
+        data class ShowMessage(val message: String) : AuthEvent() // Correct semantic for success
     }
 
     init {
         _uiState.update { it.copy(user = authRepository.getCurrentUser()) }
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
+    private fun validateCredentials(email: String, password: String? = null): String? {
+        if (!isValidEmail(email)) return "Invalid email format"
+        if (password != null && password.length < 6) return "Password must be at least 6 characters"
+        return null
     }
 
     fun onGoogleSignIn(credential: AuthCredential) {
@@ -38,10 +49,20 @@ class AuthViewModel @Inject constructor(
     }
 
     fun onEmailSignIn(email: String, password: String) {
+        val error = validateCredentials(email, password)
+        if (error != null) {
+            viewModelScope.launch { _eventFlow.emit(AuthEvent.ShowError(error)) }
+            return
+        }
         signIn { authRepository.signInWithEmail(email, password) }
     }
 
     fun onEmailSignUp(email: String, password: String) {
+        val error = validateCredentials(email, password)
+        if (error != null) {
+            viewModelScope.launch { _eventFlow.emit(AuthEvent.ShowError(error)) }
+            return
+        }
         signIn { authRepository.signUpWithEmail(email, password) }
     }
 
@@ -50,17 +71,17 @@ class AuthViewModel @Inject constructor(
     }
 
     fun onForgotPassword(email: String) {
-        if (email.isBlank()) {
-            _uiState.update { it.copy(error = "Please enter your email first") }
+        if (!isValidEmail(email)) {
+            viewModelScope.launch { _eventFlow.emit(AuthEvent.ShowError("Please enter a valid email")) }
             return
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             authRepository.sendPasswordResetEmail(email).onSuccess {
                 _uiState.update { it.copy(isLoading = false) }
-                _eventFlow.emit(AuthEvent.ShowError("Reset link sent to $email"))
+                _eventFlow.emit(AuthEvent.ShowMessage("Reset link sent to $email"))
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false) }
                 _eventFlow.emit(AuthEvent.ShowError(e.message ?: "Failed to send reset link"))
             }
         }
@@ -73,8 +94,8 @@ class AuthViewModel @Inject constructor(
             signInMethod().onSuccess { user ->
                 checkUserProfile(user.uid)
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
-                _eventFlow.emit(AuthEvent.ShowError(e.message ?: "Login failed"))
+                // Login failed - this is a persistent screen error
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Login failed") }
             }
         }
     }

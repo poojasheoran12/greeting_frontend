@@ -1,4 +1,4 @@
-package com.example.greeting.presentation.profile
+package com.example.greeting.presentation.profileSetup
 
 import android.net.Uri
 

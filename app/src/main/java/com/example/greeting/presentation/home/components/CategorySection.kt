@@ -1,0 +1,70 @@
+package com.example.greeting.presentation.home.components
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
+import com.example.greeting.domain.model.Template
+
+@Composable
+fun CategorySection(
+    title: String,
+    templates: LazyPagingItems<Template>,
+    onTemplateClick: (Template) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+            if (templates.loadState.refresh is LoadState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(32.dp),
+                    strokeWidth = 2.dp
+                )
+            } else if (templates.itemCount == 0 && templates.loadState.refresh is LoadState.NotLoading) {
+                Text(
+                    text = "No templates available",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        count = templates.itemCount,
+                        key = templates.itemKey { it.id },
+                        contentType = templates.itemContentType { "template" }
+                    ) { index ->
+                        val template = templates[index]
+                        template?.let {
+                            TemplateCard(
+                                template = it,
+                                onClick = { onTemplateClick(it) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

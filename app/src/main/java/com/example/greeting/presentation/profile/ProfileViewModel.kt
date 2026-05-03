@@ -52,14 +52,38 @@ class ProfileViewModel @Inject constructor(
             _events.emit(ProfileEvent.LoggedOut)
         }
     }
-}
 
-data class ProfileUiState(
-    val userProfile: UserProfile? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+    fun updateName(newName: String) {
+        viewModelScope.launch {
+            val currentProfile = _state.value.userProfile ?: return@launch
+            val updatedProfile = currentProfile.copy(name = newName)
+            userRepository.saveUserProfile(updatedProfile).onSuccess {
+                _state.update { it.copy(userProfile = updatedProfile, showEditNameDialog = false) }
+            }
+        }
+    }
 
-sealed class ProfileEvent {
-    object LoggedOut : ProfileEvent()
+    fun updateProfilePhoto(uri: android.net.Uri) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            val currentProfile = _state.value.userProfile ?: return@launch
+            
+            // Step 1: Upload Image
+            userRepository.uploadProfileImage(currentProfile.uid, uri).onSuccess { downloadUrl ->
+                // Step 2: Update Profile with new URL
+                val updatedProfile = currentProfile.copy(photoUrl = downloadUrl)
+                userRepository.saveUserProfile(updatedProfile).onSuccess {
+                    _state.update { it.copy(userProfile = updatedProfile, isLoading = false) }
+                }.onFailure { e ->
+                    _state.update { it.copy(isLoading = false, error = e.message) }
+                }
+            }.onFailure { e ->
+                _state.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun setShowEditNameDialog(show: Boolean) {
+        _state.update { it.copy(showEditNameDialog = show) }
+    }
 }
