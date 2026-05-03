@@ -9,6 +9,7 @@ import com.example.greeting.presentation.auth.LoginScreen
 import com.example.greeting.presentation.auth.SplashScreen
 import com.example.greeting.presentation.home.HomeScreen
 import com.example.greeting.presentation.preview.PreviewScreen
+import com.example.greeting.presentation.profile.ProfileScreen
 import com.example.greeting.presentation.profile.ProfileSetupScreen
 
 @Composable
@@ -58,9 +59,14 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Home.route) {
-            HomeScreen(onNavigateToPreview = { templateId ->
-                navController.navigate(Screen.Preview.route + "/$templateId")
-            })
+            HomeScreen(
+                onNavigateToPreview = { templateId ->
+                    navController.navigate(Screen.Preview.route + "/$templateId")
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route)
+                }
+            )
         }
 
         composable(
@@ -69,6 +75,17 @@ fun NavGraph(navController: NavHostController) {
         ) {
             PreviewScreen(
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
     }

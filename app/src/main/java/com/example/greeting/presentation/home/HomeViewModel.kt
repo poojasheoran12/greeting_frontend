@@ -2,9 +2,12 @@ package com.example.greeting.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.repository.TemplateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -24,33 +27,19 @@ class HomeViewModel @Inject constructor(
     private val _events = MutableSharedFlow<HomeUiEvent>()
     val events = _events.asSharedFlow()
 
-    init {
-        getTemplates()
-    }
+    // Pre-defined categories for the Home screen
+    val categories = listOf(
+        "hindi quotes",
+        "english quotes",
+        "days",
+        "birthdays",
+        "patrotic"
+    )
 
-    fun getTemplates() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            
-            repository.getTemplates()
-                .onSuccess { templates ->
-                    val grouped = templates.groupBy { it.category }
-                    _state.update { 
-                        it.copy(
-                            groupedTemplates = grouped, 
-                            isLoading = false 
-                        ) 
-                    }
-                }
-                .onFailure { exception ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false, 
-                            error = exception.message ?: "Unknown error" 
-                        ) 
-                    }
-                }
-        }
+    // Map to hold paging flows for each category, cached in ViewModel scope
+    val categoryFlows: Map<String, Flow<PagingData<Template>>> = categories.associateWith { category ->
+        repository.getTemplatesByCategoryPaged(category)
+            .cachedIn(viewModelScope)
     }
 
     fun onTemplateClick(template: Template) {

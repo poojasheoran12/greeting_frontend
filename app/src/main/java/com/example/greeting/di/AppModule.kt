@@ -1,5 +1,9 @@
 package com.example.greeting.di
 
+import android.content.Context
+import androidx.room.Room
+import com.example.greeting.data.local.AppDatabase
+import com.example.greeting.data.local.dao.UserDao
 import com.example.greeting.data.repository.AuthRepositoryImpl
 import com.example.greeting.data.repository.FirestoreTemplateRepository
 import com.example.greeting.data.repository.UserRepositoryImpl
@@ -12,12 +16,27 @@ import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "greeting_db"
+        ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserDao(db: AppDatabase): UserDao = db.userDao
 
     @Provides
     @Singleton
@@ -41,9 +60,10 @@ object AppModule {
     @Singleton
     fun provideUserRepository(
         firestore: FirebaseFirestore,
-        storage: FirebaseStorage
+        storage: FirebaseStorage,
+        userDao: UserDao
     ): UserRepository {
-        return UserRepositoryImpl(firestore, storage)
+        return UserRepositoryImpl(firestore, storage, userDao)
     }
 
     @Provides

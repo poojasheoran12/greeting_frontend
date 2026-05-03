@@ -1,10 +1,15 @@
 package com.example.greeting.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.example.greeting.data.mapper.toDomain
 import com.example.greeting.data.remote.dto.TemplateDto
+import com.example.greeting.data.repository.paging.TemplatePagingSource
 import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.repository.TemplateRepository
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -37,5 +42,15 @@ class FirestoreTemplateRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override fun getTemplatesByCategoryPaged(category: String): Flow<PagingData<Template>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { TemplatePagingSource(firestore, category) }
+        ).flow
     }
 }

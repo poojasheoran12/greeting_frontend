@@ -40,6 +40,7 @@ fun UserDto.toDomain(): UserProfile {
     return UserProfile(
         uid = id ?: "",
         name = name ?: "",
+        email = email,
         photoUrl = profileImageUrl,
         isGuest = isGuest ?: false
     )
@@ -49,6 +50,7 @@ fun UserProfile.toDto(): UserDto {
     return UserDto(
         id = uid,
         name = name,
+        email = email,
         profileImageUrl = photoUrl,
         isGuest = isGuest
     )
@@ -58,6 +60,7 @@ fun FirebaseUser.toDomain(): UserProfile {
     return UserProfile(
         uid = uid,
         name = displayName ?: "",
+        email = email,
         photoUrl = photoUrl?.toString(),
         isGuest = isAnonymous
     )
