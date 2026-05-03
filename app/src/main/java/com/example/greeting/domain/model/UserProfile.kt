@@ -1,8 +1,8 @@
 package com.example.greeting.domain.model
 
 data class UserProfile(
-    val id: String,
+    val uid: String,
     val name: String,
-    val email: String,
-    val profileImageUrl: String? = null
+    val photoUrl: String? = null,
+    val isGuest: Boolean = false
 )

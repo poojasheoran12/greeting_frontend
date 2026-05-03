@@ -67,6 +67,11 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage)
+    implementation(libs.play.services.auth)
+
+    // Navigation
+    implementation(libs.navigation.compose)
 
     // Coil
     implementation(libs.coil.compose)

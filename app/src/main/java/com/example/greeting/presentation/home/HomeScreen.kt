@@ -1,4 +1,4 @@
-package com.example.greeting.presentation.explore
+package com.example.greeting.presentation.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,8 +22,8 @@ import com.example.greeting.domain.model.Template
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExploreScreen(
-    viewModel: ExploreViewModel = hiltViewModel(),
+fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel(),
     onTemplateClick: (Template) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -31,7 +31,7 @@ fun ExploreScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Explore Templates", fontWeight = FontWeight.Bold) }
+                title = { Text("Greeting Home", fontWeight = FontWeight.Bold) }
             )
         }
     ) { padding ->

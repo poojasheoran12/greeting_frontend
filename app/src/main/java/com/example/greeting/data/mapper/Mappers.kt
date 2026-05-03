@@ -8,6 +8,7 @@ import com.example.greeting.domain.model.PhotoSlot
 import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.model.TextSlot
 import com.example.greeting.domain.model.UserProfile
+import com.google.firebase.auth.FirebaseUser
 
 fun TemplateDto.toDomain(): Template {
     return Template(
@@ -37,9 +38,27 @@ fun TextSlotDto.toDomain(): TextSlot {
 
 fun UserDto.toDomain(): UserProfile {
     return UserProfile(
-        id = id ?: "",
+        uid = id ?: "",
         name = name ?: "",
-        email = email ?: "",
-        profileImageUrl = profileImageUrl
+        photoUrl = profileImageUrl,
+        isGuest = isGuest ?: false
+    )
+}
+
+fun UserProfile.toDto(): UserDto {
+    return UserDto(
+        id = uid,
+        name = name,
+        profileImageUrl = photoUrl,
+        isGuest = isGuest
+    )
+}
+
+fun FirebaseUser.toDomain(): UserProfile {
+    return UserProfile(
+        uid = uid,
+        name = displayName ?: "",
+        photoUrl = photoUrl?.toString(),
+        isGuest = isAnonymous
     )
 }

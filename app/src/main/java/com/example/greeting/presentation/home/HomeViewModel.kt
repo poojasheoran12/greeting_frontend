@@ -1,4 +1,4 @@
-package com.example.greeting.presentation.explore
+package com.example.greeting.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,11 +11,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ExploreViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
     private val repository: TemplateRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ExploreState())
+    private val _state = MutableStateFlow(HomeState())
     val state = _state.asStateFlow()
 
     init {
