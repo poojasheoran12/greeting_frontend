@@ -64,7 +64,7 @@ fun GreetingPreviewContent(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = userProfile.photoUrl,
+                    model = userProfile.localPhotoUri ?: userProfile.photoUrl,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,

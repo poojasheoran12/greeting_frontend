@@ -79,13 +79,17 @@ fun ProfileScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                val photoModel = state.userProfile?.localPhotoUri ?: state.userProfile?.photoUrl
                 AsyncImage(
-                    model = state.userProfile?.photoUrl,
+                    model = photoModel,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     placeholder = rememberVectorPainter(Icons.Default.Person)
                 )
+                
+
+
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
@@ -93,6 +97,8 @@ fun ProfileScreen(
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
                 }
             }
+
+
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -198,7 +198,7 @@ fun LoginScreen(
             }
             
             TextButton(onClick = { viewModel.onAnonymousSignIn() }) {
-                Text("Continue as Guest", color = Gray500)
+                Text("Continue as Guest", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

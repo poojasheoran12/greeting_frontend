@@ -10,6 +10,8 @@ data class UserEntity(
     val name: String,
     val email: String?,
     val photoUrl: String?,
+    val localPhotoUri: String?,
+    val isPhotoSyncPending: Boolean,
     val isGuest: Boolean
 )
 
@@ -19,6 +21,8 @@ fun UserEntity.toDomain(): UserProfile {
         name = name,
         email = email,
         photoUrl = photoUrl,
+        localPhotoUri = localPhotoUri,
+        isPhotoSyncPending = isPhotoSyncPending,
         isGuest = isGuest
     )
 }
@@ -29,6 +33,8 @@ fun UserProfile.toEntity(): UserEntity {
         name = name,
         email = email,
         photoUrl = photoUrl,
+        localPhotoUri = localPhotoUri,
+        isPhotoSyncPending = isPhotoSyncPending,
         isGuest = isGuest
     )
 }

@@ -5,6 +5,8 @@ A modern, offline-first Android application that allows users to create, customi
 ## 📹 App Demo
 Check out the video recording of the app in action: [Watch Demo on Google Drive](https://drive.google.com/file/d/13vEyil1lhCzKDoUhKwsTFMBh5t3ZiH6m/view?usp=drivesdk)
 
+> **⚠️ Note:** The demo was recorded on an extremely slow network connection, so template images may appear to load slowly. On a normal network, loading is significantly faster thanks to the app's offline-first Room + Paging 3 cache.
+
 ## 🚀 Features
 *   **User Authentication:** Secure email/password and Google Sign-in utilizing Firebase Authentication.
 *   **Template Gallery:** Browse categorized greeting templates (e.g., Diwali, Birthdays) with smooth horizontal scrolling.

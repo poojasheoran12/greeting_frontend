@@ -11,8 +11,6 @@ data class HomeSection(
 
 data class HomeUiState(
     val sections: List<HomeSection> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
     val selectedPremiumTemplate: Template? = null,
     val showPremiumDialog: Boolean = false
 )

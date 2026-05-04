@@ -17,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val workManager: androidx.work.WorkManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileUiState())
@@ -32,7 +33,6 @@ class ProfileViewModel @Inject constructor(
 
     private fun loadUserProfile() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
             val authUser = authRepository.getCurrentUser()
             if (authUser != null) {
                 userRepository.getUserProfile(authUser.uid).onSuccess { profile ->
@@ -64,21 +64,31 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun updateProfilePhoto(uri: android.net.Uri) {
+        val currentProfile = _state.value.userProfile ?: return
+        
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            val currentProfile = _state.value.userProfile ?: return@launch
-            
-            // Step 1: Upload Image
-            userRepository.uploadProfileImage(currentProfile.uid, uri).onSuccess { downloadUrl ->
-                // Step 2: Update Profile with new URL
-                val updatedProfile = currentProfile.copy(photoUrl = downloadUrl)
-                userRepository.saveUserProfile(updatedProfile).onSuccess {
-                    _state.update { it.copy(userProfile = updatedProfile, isLoading = false) }
-                }.onFailure { e ->
-                    _state.update { it.copy(isLoading = false, error = e.message) }
-                }
+            // Optimistic Local Update
+            userRepository.saveLocalProfilePhoto(currentProfile.uid, uri).onSuccess {
+                // Instantly update UI from local source
+                loadUserProfile() 
+                
+                // Enqueue background sync
+                val syncRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.greeting.core.sync.ProfilePhotoUploadWorker>()
+                    .setInputData(androidx.work.workDataOf(com.example.greeting.core.sync.ProfilePhotoUploadWorker.KEY_UID to currentProfile.uid))
+                    .setConstraints(
+                        androidx.work.Constraints.Builder()
+                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .build()
+                
+                workManager.enqueueUniqueWork(
+                    "photo_sync_${currentProfile.uid}",
+                    androidx.work.ExistingWorkPolicy.REPLACE,
+                    syncRequest
+                )
             }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, error = e.message) }
+                _state.update { it.copy(error = "Failed to update local photo: ${e.message}") }
             }
         }
     }

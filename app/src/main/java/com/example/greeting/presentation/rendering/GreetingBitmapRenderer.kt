@@ -48,7 +48,8 @@ class GreetingBitmapRenderer @Inject constructor(
                 canvas.drawBitmap(bgBitmap, null, destRect, Paint(Paint.FILTER_BITMAP_FLAG))
             }
 
-            userProfile.photoUrl?.let { url ->
+            val photoToRender = userProfile.localPhotoUri ?: userProfile.photoUrl
+            photoToRender?.let { url ->
                 val profileBitmap = fetchBitmap(url)
                 if (profileBitmap != null) {
                     val size = 340f 

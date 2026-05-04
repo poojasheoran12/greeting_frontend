@@ -9,6 +9,8 @@ fun UserDto.toDomain(): UserProfile {
         name = name ?: "",
         email = email,
         photoUrl = profileImageUrl,
+        localPhotoUri = null,
+        isPhotoSyncPending = false,
         isGuest = isGuest ?: false
     )
 }

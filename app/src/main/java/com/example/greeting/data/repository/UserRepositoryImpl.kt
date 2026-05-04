@@ -24,33 +24,39 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getUserProfile(uid: String): Result<UserProfile?> {
         return try {
 
-            val localUser = userDao.getUserById(uid)
-            if (localUser != null) {
-                return Result.success(localUser.toDomain())
-            }
+            val localUser = userDao.getUserById(uid)?.toDomain()
 
             val userDto = withTimeout(5000L) {
                 firestore.collection("users")
                     .document(uid)
-                    .get(com.google.firebase.firestore.Source.DEFAULT)
+                    .get()
                     .await()
                     .toObject(UserDto::class.java)
             }
 
-            val profile = userDto?.toDomain()
+            val remoteProfile = userDto?.toDomain()
+            
+            val finalProfile = if (localUser?.isPhotoSyncPending == true && remoteProfile != null) {
+                remoteProfile.copy(
+                    localPhotoUri = localUser.localPhotoUri,
+                    isPhotoSyncPending = true
+                )
+            } else {
+                remoteProfile ?: localUser
+            }
             
 
-            profile?.let {
+            finalProfile?.let {
                 userDao.insertUser(it.toEntity())
             }
 
-            Result.success(profile)
+            Result.success(finalProfile)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun uploadProfileImage(uid: String, uri: Uri): Result<String> {
+    private suspend fun uploadProfileImage(uid: String, uri: Uri): Result<String> {
         return try {
             val ref = storage.reference.child("users/$uid/profile.jpg")
             withTimeout(15000L) { ref.putFile(uri).await() }
@@ -72,6 +78,51 @@ class UserRepositoryImpl @Inject constructor(
 
             userDao.insertUser(user.toEntity())
 
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun saveLocalProfilePhoto(uid: String, localUri: Uri): Result<Unit> {
+        return try {
+            val userEntity = userDao.getUserById(uid) ?: return Result.failure(Exception("User not found"))
+            val updatedUser = userEntity.toDomain().copy(
+                localPhotoUri = localUri.toString(),
+                isPhotoSyncPending = true
+            )
+            userDao.insertUser(updatedUser.toEntity())
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun syncProfilePhoto(uid: String): Result<Unit> {
+        return try {
+            val userEntity = userDao.getUserById(uid) ?: return Result.failure(Exception("User not found"))
+            val user = userEntity.toDomain()
+            val localUriStr = user.localPhotoUri ?: return Result.success(Unit)
+            val localUri = Uri.parse(localUriStr)
+
+
+            val downloadUrl = uploadProfileImage(uid, localUri).getOrThrow()
+
+
+            withTimeout(5000L) {
+                firestore.collection("users")
+                    .document(uid)
+                    .update("profileImageUrl", downloadUrl)
+                    .await()
+            }
+
+            val finalUser = user.copy(
+                photoUrl = downloadUrl,
+                localPhotoUri = null,
+                isPhotoSyncPending = false
+            )
+            userDao.insertUser(finalUser.toEntity())
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

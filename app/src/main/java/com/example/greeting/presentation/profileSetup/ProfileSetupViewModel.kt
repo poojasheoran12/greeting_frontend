@@ -14,7 +14,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileSetupViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val workManager: androidx.work.WorkManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileSetupUiState())
@@ -32,7 +33,7 @@ class ProfileSetupViewModel @Inject constructor(
         _uiState.update { it.copy(name = name) }
     }
 
-    fun onImageSelected(uri: Uri?) {
+    fun onImageSelected(uri: android.net.Uri?) {
         _uiState.update { it.copy(selectedImageUri = uri) }
     }
 
@@ -48,36 +49,44 @@ class ProfileSetupViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
-            var photoUrl: String? = null
+            val selectedUri = _uiState.value.selectedImageUri
             
-            // Step 1: Upload Image if selected
-            _uiState.value.selectedImageUri?.let { uri ->
-                userRepository.uploadProfileImage(currentUser.uid, uri).onSuccess { url ->
-                    photoUrl = url
-                }.onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message) }
-                    _eventFlow.emit(UiEvent.ShowError(e.message ?: "Failed to upload image"))
-                    return@launch
-                }
-            }
-
-            // Step 2: Save Profile
+            // Step 1: Initial Profile (Optimistic)
             val userProfile = UserProfile(
                 uid = currentUser.uid,
                 name = _uiState.value.name,
-                photoUrl = photoUrl,
+                photoUrl = null,
+                localPhotoUri = selectedUri?.toString(),
+                isPhotoSyncPending = selectedUri != null,
                 isGuest = currentUser.isGuest
             )
             
-            userRepository.saveUserProfile(userProfile)
-                .onSuccess {
-                    _uiState.update { it.copy(isLoading = false, isSaved = true) }
-                    _eventFlow.emit(UiEvent.NavigateToHome)
+            // Step 2: Save Profile Structure
+            userRepository.saveUserProfile(userProfile).onSuccess {
+                // Step 3: Enqueue Background Photo Sync
+                if (selectedUri != null) {
+                    val syncRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.greeting.core.sync.ProfilePhotoUploadWorker>()
+                        .setInputData(androidx.work.workDataOf(com.example.greeting.core.sync.ProfilePhotoUploadWorker.KEY_UID to currentUser.uid))
+                        .setConstraints(
+                            androidx.work.Constraints.Builder()
+                                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                                .build()
+                        )
+                        .build()
+                    
+                    workManager.enqueueUniqueWork(
+                        "photo_sync_${currentUser.uid}",
+                        androidx.work.ExistingWorkPolicy.REPLACE,
+                        syncRequest
+                    )
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message) }
-                    _eventFlow.emit(UiEvent.ShowError(e.message ?: "Failed to save profile"))
-                }
+                
+                _uiState.update { it.copy(isLoading = false, isSaved = true) }
+                _eventFlow.emit(UiEvent.NavigateToHome)
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _eventFlow.emit(UiEvent.ShowError(e.message ?: "Failed to save profile"))
+            }
         }
     }
 }
