@@ -3,7 +3,7 @@
 A modern, offline-first Android application that allows users to create, customize, and share personalized greeting cards for various occasions (Birthdays, Anniversaries, Festivals, etc.). Users can browse templates, overlay their profile photo and name onto the cards, and share the final generated images seamlessly.
 
 ## 📹 App Demo
-Check out the video recording of the app in action: [Watch Demo on Google Drive](https://drive.google.com/file/d/1hbYye8IUwXdcgRFgIdYd7oguMhJClDMf/view?usp=drivesdk)
+Check out the video recording of the app in action: [Watch Demo on Google Drive](https://drive.google.com/file/d/13vEyil1lhCzKDoUhKwsTFMBh5t3ZiH6m/view?usp=drivesdk)
 
 ## 🚀 Features
 *   **User Authentication:** Secure email/password and Google Sign-in utilizing Firebase Authentication.
