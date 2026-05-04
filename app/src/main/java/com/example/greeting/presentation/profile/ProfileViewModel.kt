@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,15 +34,22 @@ class ProfileViewModel @Inject constructor(
 
     private fun loadUserProfile() {
         viewModelScope.launch {
-            val authUser = authRepository.getCurrentUser()
-            if (authUser != null) {
-                userRepository.getUserProfile(authUser.uid).onSuccess { profile ->
-                    _state.update { it.copy(userProfile = profile ?: authUser, isLoading = false) }
-                }.onFailure { e ->
-                    _state.update { it.copy(isLoading = false, error = e.message) }
+            val authUser = authRepository.getCurrentUser() ?: return@launch
+            
+            userRepository.getUserProfileFlow(authUser.uid)
+                .onStart { _state.update { it.copy(isLoading = true) } }
+                .collect { profile ->
+                    _state.update { it.copy(
+                        userProfile = profile ?: authUser,
+                        isLoading = false 
+                    ) }
                 }
-            } else {
-                _state.update { it.copy(isLoading = false, error = "Not logged in") }
+        }
+        
+        viewModelScope.launch {
+            val authUser = authRepository.getCurrentUser() ?: return@launch
+            userRepository.refreshUserProfile(authUser.uid).onFailure { e ->
+                _state.update { it.copy(error = e.message) }
             }
         }
     }

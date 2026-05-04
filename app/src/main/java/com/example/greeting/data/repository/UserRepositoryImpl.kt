@@ -13,6 +13,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -21,9 +23,12 @@ class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao
 ) : UserRepository {
 
-    override suspend fun getUserProfile(uid: String): Result<UserProfile?> {
-        return try {
+    override fun getUserProfileFlow(uid: String): Flow<UserProfile?> {
+        return userDao.observeUserById(uid).map { it?.toDomain() }
+    }
 
+    override suspend fun refreshUserProfile(uid: String): Result<Unit> {
+        return try {
             val localUser = userDao.getUserById(uid)?.toDomain()
 
             val userDto = withTimeout(5000L) {
@@ -44,13 +49,12 @@ class UserRepositoryImpl @Inject constructor(
             } else {
                 remoteProfile ?: localUser
             }
-            
 
             finalProfile?.let {
                 userDao.insertUser(it.toEntity())
             }
 
-            Result.success(finalProfile)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

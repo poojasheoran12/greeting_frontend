@@ -125,15 +125,17 @@ class AuthViewModel @Inject constructor(
     }
 
     private suspend fun checkUserProfile(uid: String) {
-        userRepository.getUserProfile(uid).onSuccess { profile ->
-            _uiState.update { it.copy(isLoading = false) }
-            if (profile != null) {
-                _eventFlow.emit(AuthEvent.NavigateToHome)
-            } else {
-                _eventFlow.emit(AuthEvent.NavigateToProfileSetup)
-            }
-        }.onFailure { e ->
-            _uiState.update { it.copy(isLoading = false, error = e.message) }
+        // Force refresh from Firestore to check if user is returning or new
+        userRepository.refreshUserProfile(uid)
+        
+        // Check Room for the result
+        val profile = userRepository.getUserProfileFlow(uid).first()
+        
+        _uiState.update { it.copy(isLoading = false) }
+        
+        if (profile != null) {
+            _eventFlow.emit(AuthEvent.NavigateToHome)
+        } else {
             _eventFlow.emit(AuthEvent.NavigateToProfileSetup)
         }
     }

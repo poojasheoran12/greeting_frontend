@@ -55,23 +55,27 @@ class PreviewViewModel @Inject constructor(
                 return@launch
             }
 
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            viewModelScope.launch {
+                userRepository.getUserProfileFlow(authUser.uid).collect { profile ->
+                    val user = profile ?: authUser
+                    _uiState.update { it.copy(userProfile = user) }
+                }
+            }
 
-            // Fetch latest profile from Firestore
-            userRepository.getUserProfile(authUser.uid).onSuccess { profile ->
-                val user = profile ?: authUser
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true, error = null) }
                 
+                userRepository.refreshUserProfile(authUser.uid)
+
                 templateRepository.getTemplateById(templateId).onSuccess { template ->
                     if (template != null) {
-                        _uiState.update { it.copy(template = template, userProfile = user, isLoading = false) }
+                        _uiState.update { it.copy(template = template, isLoading = false) }
                     } else {
                         _uiState.update { it.copy(error = "Template not found", isLoading = false) }
                     }
                 }.onFailure { error ->
                     _uiState.update { it.copy(error = error.message ?: "Failed to fetch template", isLoading = false) }
                 }
-            }.onFailure { error ->
-                _uiState.update { it.copy(error = "Failed to fetch profile: ${error.message}", isLoading = false) }
             }
         }
     }
