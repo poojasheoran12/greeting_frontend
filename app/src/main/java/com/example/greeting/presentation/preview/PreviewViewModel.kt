@@ -3,7 +3,7 @@ package com.example.greeting.presentation.preview
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.greeting.core.utils.GreetingBitmapRenderer
+import com.example.greeting.presentation.rendering.GreetingBitmapRenderer
 import com.example.greeting.core.utils.ImageShareManager
 import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.model.UserProfile
@@ -84,15 +84,19 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSharing = true) }
             
-            val bitmap = bitmapRenderer.render(template, userProfile)
-            shareManager.shareImage(bitmap)
-                .onSuccess {
-                    _events.emit(PreviewEvent.ShareComplete)
-                }
-                .onFailure { e ->
-                    // Action error (Sharing) is transient - use Event (Toast)
-                    _events.emit(PreviewEvent.Error(e.message ?: "Failed to share"))
-                }
+            val renderResult = bitmapRenderer.render(template, userProfile)
+            
+            renderResult.onSuccess { bitmap ->
+                shareManager.shareImage(bitmap)
+                    .onSuccess {
+                        _events.emit(PreviewEvent.ShareComplete)
+                    }
+                    .onFailure { e ->
+                        _events.emit(PreviewEvent.Error(e.message ?: "Failed to share"))
+                    }
+            }.onFailure { e ->
+                _events.emit(PreviewEvent.Error(e.message ?: "Failed to generate image."))
+            }
             
             _uiState.update { it.copy(isSharing = false) }
         }

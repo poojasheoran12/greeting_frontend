@@ -61,7 +61,7 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToPreview = { templateId ->
-                    navController.navigate(Screen.Preview.route + "/$templateId")
+                    navController.navigate(Screen.Preview.createRoute(templateId))
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route)
@@ -70,7 +70,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = Screen.Preview.route + "/{templateId}",
+            route = Screen.Preview.route,
             arguments = listOf(navArgument("templateId") { type = androidx.navigation.NavType.StringType })
         ) {
             PreviewScreen(

@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.greeting.presentation.core.components.PremiumButton
 import com.example.greeting.presentation.preview.components.GreetingPreviewContent
 
@@ -23,7 +24,7 @@ fun PreviewScreen(
     onBackClick: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {

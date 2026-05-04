@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.greeting.presentation.home.components.CategorySection
 import com.example.greeting.presentation.home.components.FeaturedHeroSection
@@ -31,7 +32,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.state.collectAsState()
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->

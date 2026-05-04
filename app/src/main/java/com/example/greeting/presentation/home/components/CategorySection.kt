@@ -15,6 +15,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.example.greeting.domain.model.Template
+import com.example.greeting.presentation.core.components.shimmerEffect
 
 @Composable
 fun CategorySection(
@@ -34,10 +35,35 @@ fun CategorySection(
         
         Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
             if (templates.loadState.refresh is LoadState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center).size(32.dp),
-                    strokeWidth = 2.dp
-                )
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(3) {
+                        Box(
+                            modifier = Modifier
+                                .width(140.dp)
+                                .height(200.dp)
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            } else if (templates.loadState.refresh is LoadState.Error) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Failed to load templates",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.Button(onClick = { templates.retry() }) {
+                        Text("Retry")
+                    }
+                }
             } else if (templates.itemCount == 0 && templates.loadState.refresh is LoadState.NotLoading) {
                 Text(
                     text = "No templates available",

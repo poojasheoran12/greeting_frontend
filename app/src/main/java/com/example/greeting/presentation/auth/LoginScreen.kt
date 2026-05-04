@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.greeting.R
 import com.example.greeting.presentation.auth.AuthViewModel.AuthEvent
 import com.example.greeting.presentation.core.components.*
@@ -36,7 +37,7 @@ fun LoginScreen(
     onNavigateToProfileSetup: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 

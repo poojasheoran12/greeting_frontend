@@ -58,7 +58,9 @@ class TemplateRemoteMediator(
                     .limit(loadSize.toLong())
             }
 
-            val snapshot = query.get(Source.SERVER).await()
+            val snapshot = kotlinx.coroutines.withTimeout(5000L) {
+                query.get(Source.SERVER).await()
+            }
             val templates = snapshot.toObjects(TemplateDto::class.java).map { it.toDomain() }
             
             Log.d(TAG, "Fetched ${templates.size} templates for $category")

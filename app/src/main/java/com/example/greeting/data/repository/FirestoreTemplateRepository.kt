@@ -13,7 +13,6 @@ import com.example.greeting.domain.model.Template
 import com.example.greeting.domain.repository.TemplateRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -28,12 +27,14 @@ class FirestoreTemplateRepository @Inject constructor(
 
     override suspend fun getTemplateById(id: String): Result<Template?> {
         return try {
-            val template = firestore.collection("templates")
-                .document(id)
-                .get()
-                .await()
-                .toObject(TemplateDto::class.java)
-                ?.toDomain()
+            val template = kotlinx.coroutines.withTimeout(5000L) {
+                firestore.collection("templates")
+                    .document(id)
+                    .get(com.google.firebase.firestore.Source.DEFAULT)
+                    .await()
+                    .toObject(TemplateDto::class.java)
+                    ?.toDomain()
+            }
             Result.success(template)
         } catch (e: Exception) {
             Result.failure(e)

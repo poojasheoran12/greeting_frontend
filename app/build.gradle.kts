@@ -49,6 +49,7 @@ kapt {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -94,4 +95,7 @@ dependencies {
     implementation(libs.paging.runtime)
     implementation(libs.paging.compose)
     add("kapt", libs.hilt.compiler)
+    
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

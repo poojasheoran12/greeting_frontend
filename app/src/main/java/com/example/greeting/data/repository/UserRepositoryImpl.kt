@@ -12,6 +12,7 @@ import com.example.greeting.domain.repository.UserRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -28,12 +29,13 @@ class UserRepositoryImpl @Inject constructor(
                 return Result.success(localUser.toDomain())
             }
 
-
-            val userDto = firestore.collection("users")
-                .document(uid)
-                .get()
-                .await()
-                .toObject(UserDto::class.java)
+            val userDto = withTimeout(5000L) {
+                firestore.collection("users")
+                    .document(uid)
+                    .get(com.google.firebase.firestore.Source.DEFAULT)
+                    .await()
+                    .toObject(UserDto::class.java)
+            }
 
             val profile = userDto?.toDomain()
             
@@ -51,8 +53,8 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun uploadProfileImage(uid: String, uri: Uri): Result<String> {
         return try {
             val ref = storage.reference.child("users/$uid/profile.jpg")
-            ref.putFile(uri).await()
-            val url = ref.downloadUrl.await().toString()
+            withTimeout(15000L) { ref.putFile(uri).await() }
+            val url = withTimeout(5000L) { ref.downloadUrl.await().toString() }
             Result.success(url)
         } catch (e: Exception) {
             Result.failure(e)
@@ -61,10 +63,12 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun saveUserProfile(user: UserProfile): Result<Unit> {
         return try {
-            firestore.collection("users")
-                .document(user.uid)
-                .set(user.toDto())
-                .await()
+            withTimeout(5000L) {
+                firestore.collection("users")
+                    .document(user.uid)
+                    .set(user.toDto())
+                    .await()
+            }
 
             userDao.insertUser(user.toEntity())
 
